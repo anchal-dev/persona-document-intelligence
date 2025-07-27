@@ -1,0 +1,30 @@
+def format_output(self, documents, persona, job, sections, subsections, start_time):
+    return {
+        "metadata": {
+            "input_documents": [{"name": doc.split('/')[-1]} for doc in documents],
+            "persona": persona,
+            "job_to_be_done": job,
+            "processing_timestamp": datetime.now().isoformat(),
+            "processing_time_seconds": time.time() - start_time
+        },
+        "extracted_sections": [
+            {
+                "document": section["document_name"],
+                "page_number": section["page_number"],
+                "section_title": section["title"],
+                "importance_rank": idx + 1,
+                "relevance_score": section["score"]
+            }
+            for idx, section in enumerate(sections)
+        ],
+        "subsection_analysis": [
+            {
+                "document": sub["document_name"],
+                "parent_section": sub["parent_section"],
+                "refined_text": sub["text"][:500] + "..." if len(sub["text"]) > 500 else sub["text"],
+                "page_number": sub["page_number"],
+                "relevance_score": sub["score"]
+            }
+            for sub in subsections
+        ]
+    }

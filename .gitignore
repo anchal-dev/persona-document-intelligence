@@ -1,0 +1,34 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Output files
+data/output/
+*.log
+
+# Large files (optional)
+data/input/*.pdf
+data/documents/*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencies
+node_modules/

@@ -1,0 +1,173 @@
+def extract_key_sections(self, processed_docs: List[Dict], analysis_results: Dict) -> List[Dict]:
+    """Extract key sections ranked by importance for the persona."""
+    extracted_sections = []
+    
+    # Debug: Print what we're working with
+    print(f"🔍 Analysis results keys: {list(analysis_results.keys())}")
+    
+    # Get document analyses from persona analyzer results
+    doc_analyses = analysis_results.get('document_analyses', [])
+    print(f"🔍 Found {len(doc_analyses)} document analyses")
+    
+    if not doc_analyses:
+        # Fallback: create sections from processed docs directly
+        print("⚠️ No document analyses found, creating fallback sections")
+        for idx, doc in enumerate(processed_docs[:5], 1):
+            filename = doc.get('metadata', {}).get('filename', f'Document_{idx}')
+            
+            # Extract a reasonable section title from content
+            content = doc.get('raw_content', doc.get('content', ''))
+            section_title = self.extract_section_title_from_content(content, filename)
+            
+            # Find page number
+            page_number = self.extract_page_number(content)
+            
+            extracted_sections.append({
+                "document": filename,
+                "section_title": section_title,
+                "importance_rank": idx,
+                "page_number": page_number
+            })
+        return extracted_sections
+    
+    # Process actual document analyses
+    for idx, doc_analysis in enumerate(doc_analyses[:5], 1):
+        filename = doc_analysis.get('filename', f'Document_{idx}')
+        key_extracts = doc_analysis.get('key_extracts', [])
+        
+        # Create section title
+        if key_extracts:
+            # Use first key extract as section title
+            section_title = key_extracts[0][:60] + "..." if len(key_extracts[0]) > 60 else key_extracts[0]
+            # Clean up the title
+            section_title = section_title.strip().split('\n')[0]  # First line only
+        else:
+            section_title = self.extract_section_title_from_filename(filename)
+        
+        # Find corresponding processed document for page info
+        page_number = 1
+        for doc in processed_docs:
+            if doc.get('metadata', {}).get('filename') == filename:
+                content = doc.get('raw_content', doc.get('content', ''))
+                page_number = self.extract_page_number(content)
+                break
+        
+        extracted_sections.append({
+            "document": filename,
+            "section_title": section_title,
+            "importance_rank": idx,
+            "page_number": page_number
+        })
+    
+    return extracted_sections
+
+def generate_subsection_analysis(self, processed_docs: List[Dict], analysis_results: Dict) -> List[Dict]:
+    """Generate detailed subsection analysis with refined text."""
+    subsection_analysis = []
+    
+    # Get document analyses
+    doc_analyses = analysis_results.get('document_analyses', [])
+    
+    if not doc_analyses:
+        # Fallback: create analysis from processed docs
+        print("⚠️ No document analyses found, creating fallback subsection analysis")
+        for doc in processed_docs[:5]:
+            filename = doc.get('metadata', {}).get('filename', 'Unknown')
+            content = doc.get('raw_content', doc.get('content', ''))
+            
+            # Extract meaningful chunks of text
+            refined_text = self.extract_meaningful_content(content)
+            page_number = self.extract_page_number(content)
+            
+            if refined_text:
+                subsection_analysis.append({
+                    "document": filename,
+                    "refined_text": refined_text,
+                    "page_number": page_number
+                })
+        return subsection_analysis
+    
+    # Process actual document analyses
+    for doc_analysis in doc_analyses:
+        filename = doc_analysis.get('filename', 'Unknown')
+        key_extracts = doc_analysis.get('key_extracts', [])
+        
+        # Find the corresponding processed document
+        doc_content = ""
+        for doc in processed_docs:
+            if doc.get('metadata', {}).get('filename') == filename:
+                doc_content = doc.get('raw_content', doc.get('content', ''))
+                break
+        
+        # Process key extracts
+        for extract in key_extracts[:2]:  # Max 2 per document
+            if len(extract.strip()) < 50:  # Skip very short extracts
+                continue
+                
+            # Find page number for this extract
+            page_number = self.find_page_for_extract(extract, doc_content)
+            
+            # Clean and refine the text
+            refined_text = self.refine_text_for_persona(extract, analysis_results.get('persona', ''))
+            
+            subsection_analysis.append({
+                "document": filename,
+                "refined_text": refined_text,
+                "page_number": page_number
+            })
+    
+    return subsection_analysis
+
+def extract_section_title_from_content(self, content: str, filename: str) -> str:
+    """Extract a meaningful section title from document content."""
+    lines = content.split('\n')
+    
+    # Look for title-like lines (short, capitalized, early in document)
+    for line in lines[:20]:  # Check first 20 lines
+        line = line.strip()
+        if len(line) > 10 and len(line) < 80 and line[0].isupper():
+            # Skip page markers
+            if '--- Page' not in line and 'page' not in line.lower():
+                return line
+    
+    # Fallback to filename-based title
+    return self.extract_section_title_from_filename(filename)
+
+def extract_section_title_from_filename(self, filename: str) -> str:
+    """Create a section title from filename."""
+    title = filename.replace('.pdf', '').replace('South of France - ', '').replace('-', ' ').strip()
+    return title.title()
+
+def extract_page_number(self, content: str) -> int:
+    """Extract page number from content."""
+    if '--- Page' in content:
+        try:
+            page_start = content.find('--- Page') + 9
+            page_end = content.find('---', page_start)
+            if page_end > page_start:
+                return int(content[page_start:page_end].strip())
+        except:
+            pass
+    return 1
+
+def find_page_for_extract(self, extract: str, content: str) -> int:
+    """Find which page an extract appears on."""
+    if extract in content:
+        extract_pos = content.find(extract)
+        page_section = content[:extract_pos]
+        page_count = page_section.count('--- Page')
+        return max(1, page_count)
+    return 1
+
+def extract_meaningful_content(self, content: str) -> str:
+    """Extract meaningful content from document."""
+    # Split into paragraphs
+    paragraphs = [p.strip() for p in content.split('\n\n') if len(p.strip()) > 100]
+    
+    if paragraphs:
+        # Return first substantial paragraph
+        return paragraphs[0][:500] + "..." if len(paragraphs[0]) > 500 else paragraphs[0]
+    
+    # Fallback: first 300 characters
+    clean_content = ' '.join(content.split())
+    return clean_content[:300] + "..." if len(clean_content) > 300 else clean_content

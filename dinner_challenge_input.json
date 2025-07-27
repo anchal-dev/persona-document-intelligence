@@ -1,0 +1,6 @@
+﻿{
+    "task":  "Create a weekly dinner menu with balanced main dishes and complementary sides for a family of 4",
+    "challenge_id":  "dinner_planning",
+    "document_folder":  "data/input",
+    "persona":  "Meal Planner"
+}
