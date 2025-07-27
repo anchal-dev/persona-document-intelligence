@@ -432,15 +432,7 @@ python run\_analysis.py nutrition\_challenge\_input.json
 
 2\. \*\*PDF Processing Error\*\*: Check that PDF files are not corrupted or password-protected
 
-3\. \*\*Missing Dependencies\*\*: Run `pip install -r requirements.txt`
-
-
-
-\## 📄 License
-
-
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+3\. \*\*Missing Dependencies\*\*: Run `pip install -r requirements.txt
 
 
 
